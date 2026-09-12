@@ -145,6 +145,14 @@ test('randomDelayMs: stays within the configured minute range', () => {
   }
 });
 
+test('parseJid: recognizes a phone-number JID', () => {
+  assert.deepStrictEqual(campaign.parseJid('919148291767@s.whatsapp.net'), { id: '919148291767', isLid: false });
+});
+
+test('parseJid: recognizes a LID', () => {
+  assert.deepStrictEqual(campaign.parseJid('185375200931933@lid'), { id: '185375200931933', isLid: true });
+});
+
 // ---- CampaignEngine integration tests -----------------------------------
 
 const KEYS = ['campaign', 'contacts', 'variants'];
@@ -262,6 +270,37 @@ test('5 consecutive send failures auto-pauses the campaign', async () => {
   const state = engine.getState();
   assert.strictEqual(state.status, 'paused');
   assert.strictEqual(state.pauseReason, 'consecutive_failures');
+});
+
+test('_onReply resolves a LID-addressed reply to the right contact via their stored lid', async () => {
+  await contactsLib.importCSV('15551111111\n');
+  await contactsLib.setLids([{ number: '15551111111', lid: '185375200931933' }]);
+  await storage.writeJSON('campaign', {
+    status: 'running',
+    pauseReason: null,
+    nextVariantIndex: 0,
+    consecutiveFailures: 0,
+    currentBatch: { contacts: ['15551111111'], startedAt: new Date().toISOString(), repliesReceived: [] },
+    config: { ...campaign.DEFAULT_CONFIG },
+  });
+
+  const engine = new CampaignEngine(fakeBaileys());
+  await engine._onReply({ from: '185375200931933@lid' });
+
+  const contact = contactsLib.getContacts().find((c) => c.number === '15551111111');
+  assert.strictEqual(contact.group, 'Replied');
+});
+
+test('_onReply logs (not crashes) an unresolvable LID with no stored mapping', async () => {
+  await contactsLib.importCSV('15551111111\n'); // no lid stored for anyone
+
+  const engine = new CampaignEngine(fakeBaileys());
+  await engine._onReply({ from: '999999999999999@lid' });
+
+  const contact = contactsLib.getContacts().find((c) => c.number === '15551111111');
+  assert.strictEqual(contact.group, 'Pending'); // untouched — nothing to attribute the reply to
+  const logs = storage.readJSONL('logs', { tail: 1 });
+  assert.strictEqual(logs[0].type, 'unresolved_reply');
 });
 
 test('concurrent _onReply and pauseCampaign both land (no lost update on campaign state)', async () => {

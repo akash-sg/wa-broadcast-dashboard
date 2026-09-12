@@ -164,6 +164,20 @@ test('markInvalid only moves contacts still Pending', async () => {
   assert.strictEqual(after[1].group, 'Invalid');
 });
 
+test('setLids records each contact\'s lid, and findNumberByLid resolves it back', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n');
+  await contacts.setLids([
+    { number: '15551111111', exists: true, lid: '185375200931933' },
+    { number: '15552222222', exists: false, lid: null }, // no lid — must be skipped, not stored as null-overwrite
+  ]);
+  const stored = contacts.getContacts();
+  assert.strictEqual(stored.find((c) => c.number === '15551111111').lid, '185375200931933');
+  assert.strictEqual(stored.find((c) => c.number === '15552222222').lid, null);
+
+  assert.strictEqual(contacts.findNumberByLid('185375200931933'), '15551111111');
+  assert.strictEqual(contacts.findNumberByLid('no-such-lid'), null);
+});
+
 test('resetAll puts every contact back to Pending and clears timestamps, regardless of prior group', async () => {
   await contacts.importCSV('15551111111\n15552222222\n15553333333\n');
   const stored = contacts.getContacts();
