@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { toJID, isGenuineReply } = require('../lib/baileys');
+const { toJID, isGenuineReply, isGenuineReaction } = require('../lib/baileys');
 
 test('toJID strips non-digit characters and appends the WhatsApp suffix', () => {
   assert.strictEqual(toJID('+1 (555) 123-4567'), '15551234567@s.whatsapp.net');
@@ -33,4 +33,13 @@ test('isGenuineReply rejects reactions, protocol, and poll-update messages', () 
 
 test('isGenuineReply rejects a message with no content', () => {
   assert.strictEqual(isGenuineReply({ key: { fromMe: false }, message: null }), false);
+});
+
+test('isGenuineReaction accepts a reaction with text (someone reacted)', () => {
+  assert.strictEqual(isGenuineReaction({ key: { remoteJid: '15551234567@s.whatsapp.net' }, reaction: { text: '❤️' } }), true);
+});
+
+test('isGenuineReaction rejects a removed reaction (falsey text)', () => {
+  assert.strictEqual(isGenuineReaction({ key: { remoteJid: '15551234567@s.whatsapp.net' }, reaction: { text: '' } }), false);
+  assert.strictEqual(isGenuineReaction({ key: { remoteJid: '15551234567@s.whatsapp.net' }, reaction: {} }), false);
 });

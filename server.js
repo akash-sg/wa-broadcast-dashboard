@@ -88,7 +88,11 @@ const engine = new CampaignEngine(baileys);
 // ---- Connect ----
 app.get('/api/connect/status', (req, res) => res.json(baileys.getStatus()));
 app.post('/api/connect/reconnect', async (req, res) => {
-  await baileys.reconnectNewNumber();
+  await baileys.reconnect(); // retry with the SAME session, no wipe
+  res.json({ ok: true });
+});
+app.post('/api/connect/reconnect-new-number', async (req, res) => {
+  await baileys.reconnectNewNumber(); // wipe session, fresh pairing
   res.json({ ok: true });
 });
 

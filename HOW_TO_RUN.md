@@ -63,6 +63,15 @@ The little dot next to "WhatsApp connection" turns **green** once it's
 connected. If it's **yellow**, it's still connecting — give it a few
 seconds. If it's **red**, something's wrong — try the QR code again.
 
+**If the connection drops later:** the Connect tab has two buttons.
+**Reconnect** tries again with the same WhatsApp number — use this first,
+it's the quick fix for a normal drop. **Connect a different number**
+disconnects completely and shows a fresh QR code for pairing a *different*
+number — only use this if you actually want to switch numbers, since it
+starts the pairing over from scratch. Either way, nothing about your
+contacts or campaign progress is affected — that's tracked completely
+separately from the WhatsApp connection itself.
+
 ## 5. Upload your contacts
 
 Click the **Contacts** tab. You need a CSV file — that's just a plain text
@@ -84,6 +93,14 @@ select everyone currently shown), then click **Delete selected** — it'll
 ask you to confirm the count before anything is removed. This permanently
 deletes them, not just changes their status.
 
+**Tracking who's been sent to.** The contacts table shows a "Sent At" and
+"Replied At" time for each contact, so you can see exactly what happened
+and when — this is tracked completely separately from the WhatsApp
+connection, so it survives a disconnect/reconnect with no data lost. The
+counts row also shows a **Sent** number: contacts already messaged but
+still waiting on a reply (once they reply or the wait times out, they move
+to Replied/NoResponse and drop out of that count).
+
 ## 6. Write your messages
 
 Click the **Message Variants** tab. Write a message, click **Add variant**.
@@ -93,14 +110,17 @@ you want, any time — before or during a campaign).
 Each variant should read like a different message, not the same sentence
 with one word swapped — that's the whole point of having variants.
 
-**Getting a different channel link for each variant.** Sending the exact
-same link to everyone is one more thing that makes a message look like a
-mass blast. In a terminal, run this once for every variant you write:
+**About the channel link in your message.** Use the real, direct WhatsApp
+channel link in every variant — not a shortened one. WhatsApp shows its
+own warning screen when someone taps a shortened link (tinyurl and
+similar), which makes the message look *more* suspicious, not less. The
+direct link is WhatsApp's own domain, so it's trusted automatically and
+shows a nice preview card in the chat. The wording of each variant is what
+should differ, not the link.
 
-```bash
-node scripts/shorten-link.js
-```
-
+**Counting as a reply.** If your message asks people to react with an
+emoji (👍 or ❤️, like in the Ganesh festival example), that counts as a
+reply just like a typed message does — the app watches for both.
 Each run prints a different short link (e.g.
 `https://tinyurl.com/22tacl9o`) that goes to the same real channel — paste
 one into each variant. Takes a couple seconds, no setup needed.

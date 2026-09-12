@@ -1,8 +1,15 @@
 #!/usr/bin/env node
+// NOT RECOMMENDED BY DEFAULT — see PLAN.md "Link variation". WhatsApp shows
+// its own caution/warning screen when a recipient taps a tinyurl.com link
+// (verified with a real campaign), which defeats the point. Just use the
+// direct channel link in every variant instead; the message text is
+// already what varies. Kept for the rare case someone wants surface-level
+// link variation despite that tradeoff.
+//
 // Generates one short link to the WhatsApp channel, for pasting into a new
 // message variant. Run once per new variant, so each one gets a visibly
-// different link — see PLAN.md "Link variation". Not wired into the
-// dashboard: this is an occasional admin task, not campaign logic.
+// different link. Not wired into the dashboard: this is an occasional
+// admin task, not campaign logic.
 //
 // ponytail: is.gd/v.gd were the original plan (see PLAN.md) but were
 // failing service-wide when this was written — "Error, database insert

@@ -73,6 +73,11 @@ form { display: flex; flex-direction: column; gap: 0.5rem; max-width: 480px; }
 #settings-form label { display: flex; justify-content: space-between; gap: 1rem; }
 #settings-form input { width: 120px; }
 
+/* Just type the number — no up/down spinner to fight with. */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 button {
   padding: 0.5rem 1rem;
   border: 1px solid var(--border);

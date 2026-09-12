@@ -152,6 +152,12 @@ document.getElementById('reconnect-btn').addEventListener('click', async () => {
   await api('/api/connect/reconnect', { method: 'POST' });
   loadConnect();
 });
+document.getElementById('reconnect-new-number-btn').addEventListener('click', async () => {
+  const ok = confirm('Connect a different number? This disconnects the current one and shows a fresh QR code to scan.');
+  if (!ok) return;
+  await api('/api/connect/reconnect-new-number', { method: 'POST' });
+  loadConnect();
+});
 
 // ---- Contacts ----------------------------------------------------------------
 
@@ -202,7 +208,9 @@ function renderContactsTable() {
     checkTd.appendChild(checkbox);
     tr.appendChild(checkTd);
 
-    for (const value of [c.number, c.group]) {
+    const sentDisplay = c.sentAt ? new Date(c.sentAt).toLocaleString() : '';
+    const repliedDisplay = c.repliedAt ? new Date(c.repliedAt).toLocaleString() : '';
+    for (const value of [c.number, c.group, sentDisplay, repliedDisplay]) {
       const td = document.createElement('td');
       td.textContent = value; // never innerHTML — untrusted contact data must never be parsed as markup
       tr.appendChild(td);

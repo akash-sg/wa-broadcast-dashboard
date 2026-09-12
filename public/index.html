@@ -54,7 +54,11 @@
       <h2>Connect</h2>
       <div class="status-row"><span class="status-dot" id="connect-dot"></span>Status: <strong id="connect-status">-</strong></div>
       <img id="connect-qr" alt="Scan this QR code with WhatsApp" hidden>
-      <button id="reconnect-btn">Reconnect with a different number</button>
+      <div class="controls">
+        <button id="reconnect-btn">Reconnect</button>
+        <button id="reconnect-new-number-btn">Connect a different number</button>
+      </div>
+      <p class="hint">Reconnect retries your current WhatsApp number. "Connect a different number" starts over with a fresh QR code for a new number.</p>
     </section>
 
     <section id="tab-contacts" class="tab-panel">
@@ -81,7 +85,7 @@
       </div>
 
       <table id="contacts-table">
-        <thead><tr><th><input type="checkbox" id="contacts-select-all"></th><th>Number</th><th>Group</th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="contacts-select-all"></th><th>Number</th><th>Group</th><th>Sent At</th><th>Replied At</th></tr></thead>
         <tbody></tbody>
       </table>
     </section>

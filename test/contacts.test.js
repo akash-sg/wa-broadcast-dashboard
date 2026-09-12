@@ -96,7 +96,17 @@ test('getCounts tallies by group, including Invalid', async () => {
   stored[0].group = 'Replied';
   stored[1].group = 'Invalid';
   await storage.writeJSON('contacts', stored);
-  assert.deepStrictEqual(contacts.getCounts(), { Pending: 0, Replied: 1, NoResponse: 0, Invalid: 1 });
+  assert.deepStrictEqual(contacts.getCounts(), { Pending: 0, Replied: 1, NoResponse: 0, Invalid: 1, Sent: 0 });
+});
+
+test('getCounts "Sent" counts Pending contacts that already have sentAt (in-flight, awaiting reply)', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n15553333333\n');
+  const stored = contacts.getContacts();
+  stored[0].sentAt = new Date().toISOString(); // sent, still Pending (in-flight)
+  stored[1].group = 'Replied';
+  stored[1].sentAt = new Date().toISOString(); // sent AND resolved — not counted as "Sent"
+  await storage.writeJSON('contacts', stored);
+  assert.deepStrictEqual(contacts.getCounts(), { Pending: 2, Replied: 1, NoResponse: 0, Invalid: 0, Sent: 1 });
 });
 
 test('markSent sets sentAt and lastMessageVariant', async () => {
@@ -180,7 +190,7 @@ test('deleteContacts removes only the given numbers and reports how many were ac
   assert.strictEqual(result.deletedCount, 2); // only the 2 that actually existed
   const after = contacts.getContacts();
   assert.deepStrictEqual(after.map((c) => c.number), ['15552222222']);
-  assert.deepStrictEqual(result.counts, { Pending: 1, Replied: 0, NoResponse: 0, Invalid: 0 });
+  assert.deepStrictEqual(result.counts, { Pending: 1, Replied: 0, NoResponse: 0, Invalid: 0, Sent: 0 });
 });
 
 test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
