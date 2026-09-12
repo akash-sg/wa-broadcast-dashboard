@@ -93,6 +93,18 @@ you want, any time — before or during a campaign).
 Each variant should read like a different message, not the same sentence
 with one word swapped — that's the whole point of having variants.
 
+**Getting a different channel link for each variant.** Sending the exact
+same link to everyone is one more thing that makes a message look like a
+mass blast. In a terminal, run this once for every variant you write:
+
+```bash
+node scripts/shorten-link.js
+```
+
+Each run prints a different short link (e.g.
+`https://tinyurl.com/22tacl9o`) that goes to the same real channel — paste
+one into each variant. Takes a couple seconds, no setup needed.
+
 ## 7. Check your pacing settings (optional)
 
 Click **Pacing/Settings** if you want to change how many messages go out
