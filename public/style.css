@@ -1,0 +1,101 @@
+:root {
+  color-scheme: light dark;
+  --border: #d0d0d0;
+  --bg-subtle: #f5f5f5;
+  --accent: #1a7f37;
+  --danger: #b42318;
+  --warn-bg: #fff3cd;
+  --warn-border: #e0b100;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: Canvas;
+  color: CanvasText;
+}
+
+.screen { min-height: 100vh; }
+[hidden] { display: none !important; }
+
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 280px;
+}
+#login-form h1 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+#login-form input, #login-form button { padding: 0.6rem; font-size: 1rem; }
+
+.error { color: var(--danger); font-size: 0.9rem; }
+
+#tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1rem 0;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-bottom: 2px solid transparent;
+  color: inherit;
+}
+.tab-btn.active { border-bottom-color: var(--accent); font-weight: 600; }
+
+main { padding: 1rem; max-width: 900px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.counts { display: flex; gap: 1rem; margin: 0.75rem 0; }
+.counts span { padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 6px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+form { display: flex; flex-direction: column; gap: 0.5rem; max-width: 480px; }
+#import-form, #variant-form { flex-direction: row; flex-wrap: wrap; align-items: center; max-width: none; }
+#settings-form label { display: flex; justify-content: space-between; gap: 1rem; }
+#settings-form input { width: 120px; }
+
+button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-subtle);
+  cursor: pointer;
+}
+button:hover { filter: brightness(0.95); }
+
+.controls { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+#connect-qr { max-width: 260px; margin: 1rem 0; display: block; }
+
+.banner {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+#variant-list, #log-list { list-style: none; padding: 0; margin-top: 1rem; }
+#variant-list li, #log-list li {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+#log-list li { font-family: ui-monospace, monospace; }

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Broadcast Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login-screen" class="screen">
+  <form id="login-form">
+    <h1>WhatsApp Broadcast Dashboard</h1>
+    <input type="password" id="login-password" placeholder="Dashboard password" autocomplete="current-password" required>
+    <button type="submit">Log in</button>
+    <p id="login-error" class="error" hidden></p>
+  </form>
+</div>
+
+<div id="app-screen" class="screen" hidden>
+  <nav id="tabs">
+    <button class="tab-btn" data-tab="connect">Connect</button>
+    <button class="tab-btn" data-tab="contacts">Contacts</button>
+    <button class="tab-btn" data-tab="variants">Message Variants</button>
+    <button class="tab-btn" data-tab="settings">Pacing/Settings</button>
+    <button class="tab-btn" data-tab="campaign">Campaign</button>
+    <button class="tab-btn" data-tab="logs">Logs</button>
+  </nav>
+
+  <main>
+    <section id="tab-connect" class="tab-panel">
+      <h2>Connect</h2>
+      <p>Status: <strong id="connect-status">-</strong></p>
+      <img id="connect-qr" alt="Scan this QR code with WhatsApp" hidden>
+      <button id="reconnect-btn">Reconnect with a different number</button>
+    </section>
+
+    <section id="tab-contacts" class="tab-panel">
+      <h2>Contacts</h2>
+      <div class="counts" id="contacts-counts"></div>
+      <form id="import-form">
+        <input type="file" id="import-file" accept=".csv,text/csv" required>
+        <input type="text" id="import-country-code" placeholder="Default country code (optional)">
+        <button type="submit">Upload CSV</button>
+      </form>
+      <p id="import-result"></p>
+      <a id="export-link" href="#">Export contacts CSV</a>
+      <table id="contacts-table">
+        <thead><tr><th>Name</th><th>Number</th><th>Group</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="tab-variants" class="tab-panel">
+      <h2>Message Variants</h2>
+      <form id="variant-form">
+        <textarea id="variant-text" placeholder="Message text — use {{name}} to personalize" required></textarea>
+        <button type="submit">Add variant</button>
+      </form>
+      <ul id="variant-list"></ul>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <h2>Pacing/Settings</h2>
+      <form id="settings-form">
+        <label>Batch size <input type="number" name="batchSize" min="1"></label>
+        <label>Reply threshold <input type="number" name="replyThreshold" min="1"></label>
+        <label>Batch timeout (minutes) <input type="number" name="timeoutMinutes" min="1"></label>
+        <label>Min delay between sends (minutes) <input type="number" name="minDelayMin" min="0"></label>
+        <label>Max delay between sends (minutes) <input type="number" name="maxDelayMin" min="0"></label>
+        <label>Quiet hours start (0-23) <input type="number" name="quietStartHour" min="0" max="23"></label>
+        <label>Quiet hours end (0-23) <input type="number" name="quietEndHour" min="0" max="23"></label>
+        <label>Reply-ratio threshold (0-1) <input type="number" name="replyRatioThreshold" min="0" max="1" step="0.01"></label>
+        <label>Reply-ratio window (sends) <input type="number" name="replyRatioWindow" min="1"></label>
+        <button type="submit">Save settings</button>
+      </form>
+      <p id="settings-saved" hidden>Saved.</p>
+    </section>
+
+    <section id="tab-campaign" class="tab-panel">
+      <h2>Campaign</h2>
+      <p id="campaign-banner" class="banner" hidden></p>
+      <div class="counts" id="campaign-counts"></div>
+      <p>Status: <strong id="campaign-status">-</strong></p>
+      <div id="campaign-batch"></div>
+      <div class="controls">
+        <button id="campaign-start">Start</button>
+        <button id="campaign-pause">Pause</button>
+        <button id="campaign-resume">Resume</button>
+        <button id="campaign-stop">Stop</button>
+      </div>
+    </section>
+
+    <section id="tab-logs" class="tab-panel">
+      <h2>Logs</h2>
+      <ul id="log-list"></ul>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
