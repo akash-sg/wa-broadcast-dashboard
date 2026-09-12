@@ -112,6 +112,17 @@ test('markReplied flips group to Replied unconditionally, even from NoResponse',
   assert.strictEqual(c.repliedAt, '2026-01-01T00:00:00Z');
 });
 
+test('concurrent markSent and markReplied on different contacts both land (no lost update)', async () => {
+  await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await Promise.all([
+    contacts.markSent('15551111111', { variantId: 'v1' }),
+    contacts.markReplied('15552222222'),
+  ]);
+  const stored = contacts.getContacts();
+  assert.ok(stored.find((c) => c.number === '15551111111').sentAt, 'markSent was not lost');
+  assert.strictEqual(stored.find((c) => c.number === '15552222222').group, 'Replied');
+});
+
 test('markNoResponse only moves contacts still Pending', async () => {
   await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
   const stored = contacts.getContacts();

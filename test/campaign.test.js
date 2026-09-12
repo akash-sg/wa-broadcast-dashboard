@@ -245,6 +245,29 @@ test('5 consecutive send failures auto-pauses the campaign', async () => {
   assert.strictEqual(state.pauseReason, 'consecutive_failures');
 });
 
+test('concurrent _onReply and pauseCampaign both land (no lost update on campaign state)', async () => {
+  await contactsLib.importCSV('name,number\nA,15551111111\n');
+  await storage.writeJSON('campaign', {
+    status: 'running',
+    pauseReason: null,
+    nextVariantIndex: 0,
+    consecutiveFailures: 0,
+    currentBatch: { contacts: ['15551111111'], startedAt: new Date().toISOString(), repliesReceived: [] },
+    config: { ...campaign.DEFAULT_CONFIG },
+  });
+
+  const engine = new CampaignEngine(fakeBaileys());
+  await Promise.all([
+    engine._onReply({ from: '15551111111@s.whatsapp.net' }),
+    engine.pauseCampaign(),
+  ]);
+
+  const state = engine.getState();
+  assert.strictEqual(state.status, 'paused'); // pauseCampaign's change landed
+  assert.strictEqual(state.pauseReason, 'manual');
+  assert.deepStrictEqual(state.currentBatch.repliesReceived, ['15551111111']); // _onReply's change also landed
+});
+
 test('stopCampaign finalizes the current batch before marking stopped', async () => {
   await contactsLib.importCSV('name,number\nA,15551111111\nB,15552222222\n');
   await storage.writeJSON('campaign', {

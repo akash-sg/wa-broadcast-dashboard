@@ -14,7 +14,8 @@ const storage = require('./lib/storage');
 const contactsLib = require('./lib/contacts');
 const variantsLib = require('./lib/variants');
 const { BaileysConnection } = require('./lib/baileys');
-const { CampaignEngine } = require('./lib/campaign');
+const campaign = require('./lib/campaign');
+const { CampaignEngine } = campaign;
 
 // Crash supervisor (eng review CRITICAL): this runs unattended for weeks.
 // Log and keep going rather than let one unhandled rejection silently kill
@@ -112,31 +113,41 @@ app.get('/api/variants', (req, res) => res.json(variantsLib.getVariants()));
 app.post('/api/variants', async (req, res) => {
   const { text } = req.body || {};
   if (!text) return res.status(400).json({ error: 'missing text' });
-  const variants = variantsLib.getVariants();
   const variant = { id: crypto.randomBytes(6).toString('hex'), text };
-  variants.push(variant);
-  await variantsLib.setVariants(variants);
+  await variantsLib.mutateVariants((variants) => { variants.push(variant); return variants; });
   res.json(variant);
 });
 app.put('/api/variants/:id', async (req, res) => {
   const { text } = req.body || {};
-  const variants = variantsLib.getVariants();
-  const variant = variants.find((v) => v.id === req.params.id);
-  if (!variant) return res.status(404).json({ error: 'not found' });
-  if (text) variant.text = text;
-  await variantsLib.setVariants(variants);
-  res.json(variant);
+  let found = null;
+  await variantsLib.mutateVariants((variants) => {
+    found = variants.find((v) => v.id === req.params.id);
+    if (found && text) found.text = text;
+    return variants;
+  });
+  if (!found) return res.status(404).json({ error: 'not found' });
+  res.json(found);
 });
 app.delete('/api/variants/:id', async (req, res) => {
-  const variants = variantsLib.getVariants().filter((v) => v.id !== req.params.id);
-  await variantsLib.setVariants(variants);
+  await variantsLib.mutateVariants((variants) => variants.filter((v) => v.id !== req.params.id));
   res.json({ ok: true });
 });
 
 // ---- Pacing/Settings ----
+const CONFIG_KEYS = Object.keys(campaign.DEFAULT_CONFIG);
 app.get('/api/settings', (req, res) => res.json(engine.getState().config));
 app.put('/api/settings', async (req, res) => {
-  const state = await engine.updateConfig(req.body || {});
+  const body = req.body || {};
+  const partial = {};
+  for (const key of CONFIG_KEYS) {
+    if (!(key in body)) continue;
+    const value = Number(body[key]);
+    if (!Number.isFinite(value)) {
+      return res.status(400).json({ error: `${key} must be a number` });
+    }
+    partial[key] = value;
+  }
+  const state = await engine.updateConfig(partial);
   res.json(state.config);
 });
 

@@ -6,7 +6,7 @@ const path = require('path');
 const storage = require('../lib/storage');
 
 // Uses the real data/ dir with a test- prefix, cleaned up after.
-const names = ['test-unit-file', 'test-race', 'test-log', 'test-log-tail'];
+const names = ['test-unit-file', 'test-race', 'test-log', 'test-log-tail', 'test-mutate', 'test-mutate-missing'];
 test.after(() => {
   for (const n of names) {
     fs.rmSync(path.join(storage.DATA_DIR, `${n}.json`), { force: true });
@@ -50,4 +50,18 @@ test('readJSONL tail option returns only the last N entries', async () => {
 
 test('readJSONL returns empty array when file missing', () => {
   assert.deepStrictEqual(storage.readJSONL('test-no-such-log'), []);
+});
+
+test('mutateJSON serializes concurrent mutations without losing updates', async () => {
+  await storage.writeJSON('test-mutate', { a: null, b: null });
+  await Promise.all([
+    storage.mutateJSON('test-mutate', (obj) => { obj.a = 'set-by-first'; return obj; }, {}),
+    storage.mutateJSON('test-mutate', (obj) => { obj.b = 'set-by-second'; return obj; }, {}),
+  ]);
+  assert.deepStrictEqual(storage.readJSON('test-mutate'), { a: 'set-by-first', b: 'set-by-second' });
+});
+
+test('mutateJSON passes the default value when the file does not exist yet', async () => {
+  const result = await storage.mutateJSON('test-mutate-missing', (arr) => { arr.push('x'); return arr; }, []);
+  assert.deepStrictEqual(result, ['x']);
 });
