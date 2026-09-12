@@ -107,6 +107,14 @@ app.get('/api/contacts/export', (req, res) => {
   res.set('Content-Disposition', 'attachment; filename="contacts-export.csv"');
   res.send(contactsLib.exportCSV());
 });
+app.post('/api/contacts/delete', async (req, res) => {
+  const { numbers } = req.body || {};
+  if (!Array.isArray(numbers) || numbers.length === 0 || !numbers.every((n) => typeof n === 'string')) {
+    return res.status(400).json({ error: 'numbers must be a non-empty array of strings' });
+  }
+  const result = await contactsLib.deleteContacts(numbers);
+  res.json(result);
+});
 
 // ---- Message Variants ----
 app.get('/api/variants', (req, res) => res.json(variantsLib.getVariants()));

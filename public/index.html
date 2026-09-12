@@ -68,8 +68,20 @@
       <p class="hint">CSV: one number per row (a "number" header column is optional; other columns are ignored).</p>
       <p id="import-result"></p>
       <a id="export-link" href="#">Download report (CSV)</a>
+
+      <div class="controls" style="margin-top:1rem; align-items:center;">
+        <label>Filter: <select id="contacts-filter">
+          <option value="">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Replied">Replied</option>
+          <option value="NoResponse">NoResponse</option>
+          <option value="Invalid">Invalid</option>
+        </select></label>
+        <button id="contacts-delete-selected" class="danger" disabled>Delete selected (0)</button>
+      </div>
+
       <table id="contacts-table">
-        <thead><tr><th>Number</th><th>Group</th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="contacts-select-all"></th><th>Number</th><th>Group</th></tr></thead>
         <tbody></tbody>
       </table>
     </section>

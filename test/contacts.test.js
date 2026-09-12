@@ -163,6 +163,16 @@ test('resetAll puts every contact back to Pending and clears timestamps, regardl
   assert.ok(after.every((c) => c.lastMessageVariant === null));
 });
 
+test('deleteContacts removes only the given numbers and reports how many were actually deleted', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n15553333333\n');
+
+  const result = await contacts.deleteContacts(['15551111111', '15553333333', '15559999999']); // last one doesn't exist
+  assert.strictEqual(result.deletedCount, 2); // only the 2 that actually existed
+  const after = contacts.getContacts();
+  assert.deepStrictEqual(after.map((c) => c.number), ['15552222222']);
+  assert.deepStrictEqual(result.counts, { Pending: 1, Replied: 0, NoResponse: 0, Invalid: 0 });
+});
+
 test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
   const csv = contacts.exportCSV([
     { number: '=cmd|/c calc', group: 'Pending' },

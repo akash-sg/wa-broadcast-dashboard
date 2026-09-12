@@ -164,15 +164,44 @@ function renderCounts(el, counts) {
   }
 }
 
+let allContacts = [];
+const selectedNumbers = new Set();
+
 async function loadContacts() {
   const res = await api('/api/contacts');
   const { contacts, counts } = await res.json();
   renderCounts(document.getElementById('contacts-counts'), counts);
+  allContacts = contacts;
+  // Drop selections for contacts that no longer exist (e.g. after a delete).
+  const stillPresent = new Set(contacts.map((c) => c.number));
+  for (const n of selectedNumbers) if (!stillPresent.has(n)) selectedNumbers.delete(n);
+  renderContactsTable();
+}
 
+function visibleContacts() {
+  const filter = document.getElementById('contacts-filter').value;
+  return filter ? allContacts.filter((c) => c.group === filter) : allContacts;
+}
+
+function renderContactsTable() {
+  const visible = visibleContacts();
   const tbody = document.querySelector('#contacts-table tbody');
   tbody.textContent = '';
-  for (const c of contacts) {
+  for (const c of visible) {
     const tr = document.createElement('tr');
+
+    const checkTd = document.createElement('td');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectedNumbers.has(c.number);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) selectedNumbers.add(c.number);
+      else selectedNumbers.delete(c.number);
+      updateContactsToolbar();
+    });
+    checkTd.appendChild(checkbox);
+    tr.appendChild(checkTd);
+
     for (const value of [c.number, c.group]) {
       const td = document.createElement('td');
       td.textContent = value; // never innerHTML — untrusted contact data must never be parsed as markup
@@ -180,7 +209,39 @@ async function loadContacts() {
     }
     tbody.appendChild(tr);
   }
+  updateContactsToolbar();
 }
+
+function updateContactsToolbar() {
+  const visible = visibleContacts();
+  const visibleNumbers = visible.map((c) => c.number);
+  const allVisibleSelected = visibleNumbers.length > 0 && visibleNumbers.every((n) => selectedNumbers.has(n));
+  document.getElementById('contacts-select-all').checked = allVisibleSelected;
+
+  const deleteBtn = document.getElementById('contacts-delete-selected');
+  deleteBtn.textContent = `Delete selected (${selectedNumbers.size})`;
+  deleteBtn.disabled = selectedNumbers.size === 0;
+}
+
+document.getElementById('contacts-filter').addEventListener('change', renderContactsTable);
+
+document.getElementById('contacts-select-all').addEventListener('change', (e) => {
+  for (const c of visibleContacts()) {
+    if (e.target.checked) selectedNumbers.add(c.number);
+    else selectedNumbers.delete(c.number);
+  }
+  renderContactsTable();
+});
+
+document.getElementById('contacts-delete-selected').addEventListener('click', async () => {
+  const count = selectedNumbers.size;
+  if (count === 0) return;
+  const ok = confirm(`Delete ${count} selected contact${count === 1 ? '' : 's'}? This permanently removes them — it cannot be undone.`);
+  if (!ok) return;
+  await api('/api/contacts/delete', { method: 'POST', body: JSON.stringify({ numbers: Array.from(selectedNumbers) }) });
+  selectedNumbers.clear();
+  loadContacts();
+});
 
 document.getElementById('import-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -313,15 +374,22 @@ document.getElementById('campaign-resume').addEventListener('click', () => api('
 document.getElementById('campaign-stop').addEventListener('click', () => api('/api/campaign/stop', { method: 'POST' }).then(loadCampaign));
 
 document.getElementById('campaign-reset').addEventListener('click', async () => {
-  const ok = confirm(
-    'Reset the campaign? Every contact goes back to Pending, ready to be messaged again from scratch. ' +
-    'This deletes the record of who replied last time. A report will download automatically first — ' +
-    'continue?'
-  );
-  if (!ok) return;
-  await downloadReport();
-  await api('/api/campaign/reset', { method: 'POST' });
-  loadCampaign();
+  try {
+    const typed = prompt(
+      'Reset the campaign? Every contact goes back to Pending, ready to be messaged again from scratch. ' +
+      'This deletes the record of who replied last time (a report downloads automatically first). ' +
+      'This cannot be undone.\n\nType RESET CAMPAIGN (exactly) to confirm:'
+    );
+    if (typed !== 'RESET CAMPAIGN') {
+      if (typed !== null) alert('Did not match "RESET CAMPAIGN" exactly — nothing was reset.');
+      return;
+    }
+    await downloadReport();
+    await api('/api/campaign/reset', { method: 'POST' });
+    loadCampaign();
+  } catch (err) {
+    if (err.message !== 'unauthorized') alert(`Reset failed: ${err.message}`);
+  }
 });
 
 // ---- Logs ----------------------------------------------------------------

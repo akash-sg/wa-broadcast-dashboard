@@ -77,6 +77,13 @@ uploading — the app will add it automatically.
 Click **Choose File**, pick your CSV, click **Upload CSV**. You'll see how
 many were accepted and how many were rejected (and why).
 
+**Cleaning up your contact list.** Below the table there's a **Filter**
+dropdown (show only Pending, only Replied, etc.) and checkboxes on each
+row. Tick the ones you want gone (or tick the checkbox in the header to
+select everyone currently shown), then click **Delete selected** — it'll
+ask you to confirm the count before anything is removed. This permanently
+deletes them, not just changes their status.
+
 ## 6. Write your messages
 
 Click the **Message Variants** tab. Write a message, click **Add variant**.
@@ -130,9 +137,11 @@ Once a campaign finishes (or any time you want a clean slate), go to the
    scratch, with a blank slate.
 
 Your pacing settings (batch size, delays, quiet hours, etc.) are kept —
-only the contact statuses get wiped. You'll see a confirmation popup before
-anything happens, since this can't be undone (beyond that downloaded
-report).
+only the contact statuses get wiped. Since this can't be undone (beyond
+that downloaded report), it will ask you to type **RESET CAMPAIGN**
+(exactly, in capitals) into a popup before anything happens — this is
+deliberately more friction than a simple "are you sure?" click, so a
+stray click can't wipe your campaign by accident.
 
 If you just want to message a brand-new list of people instead, you don't
 need Reset at all — just upload the new CSV (step 5) and click Start.
