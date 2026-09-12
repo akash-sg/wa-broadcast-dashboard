@@ -144,6 +144,25 @@ test('markInvalid only moves contacts still Pending', async () => {
   assert.strictEqual(after[1].group, 'Invalid');
 });
 
+test('resetAll puts every contact back to Pending and clears timestamps, regardless of prior group', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n15553333333\n');
+  const stored = contacts.getContacts();
+  stored[0].group = 'Replied';
+  stored[0].sentAt = '2026-01-01T00:00:00Z';
+  stored[0].repliedAt = '2026-01-01T01:00:00Z';
+  stored[1].group = 'NoResponse';
+  stored[1].sentAt = '2026-01-01T00:00:00Z';
+  stored[2].group = 'Invalid';
+  await storage.writeJSON('contacts', stored);
+
+  await contacts.resetAll();
+  const after = contacts.getContacts();
+  assert.ok(after.every((c) => c.group === 'Pending'));
+  assert.ok(after.every((c) => c.sentAt === null));
+  assert.ok(after.every((c) => c.repliedAt === null));
+  assert.ok(after.every((c) => c.lastMessageVariant === null));
+});
+
 test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
   const csv = contacts.exportCSV([
     { number: '=cmd|/c calc', group: 'Pending' },

@@ -307,3 +307,32 @@ test('stopCampaign finalizes the current batch before marking stopped', async ()
   const after = contactsLib.getContacts();
   assert.ok(after.every((c) => c.group === 'NoResponse'));
 });
+
+test('resetCampaign puts every contact back to Pending and resets progress, but keeps pacing config', async () => {
+  await contactsLib.importCSV('15551111111\n15552222222\n');
+  const stored = contactsLib.getContacts();
+  stored[0].group = 'Replied';
+  stored[0].sentAt = new Date().toISOString();
+  stored[1].group = 'NoResponse';
+  await storage.writeJSON('contacts', stored);
+  await storage.writeJSON('campaign', {
+    status: 'idle',
+    pauseReason: null,
+    nextVariantIndex: 3,
+    consecutiveFailures: 2,
+    currentBatch: null,
+    config: { ...campaign.DEFAULT_CONFIG, batchSize: 42 }, // a custom pacing value
+  });
+
+  const engine = new CampaignEngine(fakeBaileys());
+  await engine.resetCampaign();
+
+  const state = engine.getState();
+  assert.strictEqual(state.status, 'idle');
+  assert.strictEqual(state.nextVariantIndex, 0);
+  assert.strictEqual(state.consecutiveFailures, 0);
+  assert.strictEqual(state.config.batchSize, 42); // pacing settings preserved
+
+  const after = contactsLib.getContacts();
+  assert.ok(after.every((c) => c.group === 'Pending' && c.sentAt === null));
+});

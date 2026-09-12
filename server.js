@@ -160,6 +160,7 @@ app.post('/api/campaign/start', async (req, res) => res.json(await engine.startC
 app.post('/api/campaign/pause', async (req, res) => res.json(await engine.pauseCampaign()));
 app.post('/api/campaign/resume', async (req, res) => res.json(await engine.resumeCampaign()));
 app.post('/api/campaign/stop', async (req, res) => res.json(await engine.stopCampaign()));
+app.post('/api/campaign/reset', async (req, res) => res.json(await engine.resetCampaign()));
 
 // ---- Logs ----
 app.get('/api/logs', (req, res) => {

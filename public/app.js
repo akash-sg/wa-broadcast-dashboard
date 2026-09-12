@@ -201,8 +201,7 @@ document.getElementById('import-form').addEventListener('submit', async (e) => {
   loadContacts();
 });
 
-async function downloadReport(e) {
-  e.preventDefault();
+async function downloadReport() {
   const res = await api('/api/contacts/export');
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
@@ -212,8 +211,8 @@ async function downloadReport(e) {
   a.click();
   URL.revokeObjectURL(url);
 }
-document.getElementById('export-link').addEventListener('click', downloadReport);
-document.getElementById('dash-export-link').addEventListener('click', downloadReport);
+document.getElementById('export-link').addEventListener('click', (e) => { e.preventDefault(); downloadReport(); });
+document.getElementById('dash-export-link').addEventListener('click', (e) => { e.preventDefault(); downloadReport(); });
 
 // ---- Message Variants ----------------------------------------------------------------
 
@@ -312,6 +311,18 @@ document.getElementById('campaign-start').addEventListener('click', () => api('/
 document.getElementById('campaign-pause').addEventListener('click', () => api('/api/campaign/pause', { method: 'POST' }).then(loadCampaign));
 document.getElementById('campaign-resume').addEventListener('click', () => api('/api/campaign/resume', { method: 'POST' }).then(loadCampaign));
 document.getElementById('campaign-stop').addEventListener('click', () => api('/api/campaign/stop', { method: 'POST' }).then(loadCampaign));
+
+document.getElementById('campaign-reset').addEventListener('click', async () => {
+  const ok = confirm(
+    'Reset the campaign? Every contact goes back to Pending, ready to be messaged again from scratch. ' +
+    'This deletes the record of who replied last time. A report will download automatically first — ' +
+    'continue?'
+  );
+  if (!ok) return;
+  await downloadReport();
+  await api('/api/campaign/reset', { method: 'POST' });
+  loadCampaign();
+});
 
 // ---- Logs ----------------------------------------------------------------
 

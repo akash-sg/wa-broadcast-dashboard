@@ -119,6 +119,24 @@ On the **Dashboard** tab (or the **Contacts** tab), click **Download report
 (Pending / Replied / NoResponse / Invalid), and when they were messaged —
 open it in Excel or Google Sheets.
 
+## 11. Starting completely over with the same list
+
+Once a campaign finishes (or any time you want a clean slate), go to the
+**Campaign** tab and click **Reset campaign** (the red button). It will:
+
+1. Automatically download a report first, so you keep a record of who
+   replied last time.
+2. Put every contact back to "Pending" — ready to be messaged again from
+   scratch, with a blank slate.
+
+Your pacing settings (batch size, delays, quiet hours, etc.) are kept —
+only the contact statuses get wiped. You'll see a confirmation popup before
+anything happens, since this can't be undone (beyond that downloaded
+report).
+
+If you just want to message a brand-new list of people instead, you don't
+need Reset at all — just upload the new CSV (step 5) and click Start.
+
 ## What the contact statuses mean
 
 - **Pending** — hasn't been sent to yet.
