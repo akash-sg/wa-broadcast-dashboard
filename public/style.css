@@ -1,11 +1,33 @@
 :root {
   color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #111111;
   --border: #d0d0d0;
-  --bg-subtle: #f5f5f5;
+  --bg-subtle: #f0f0f0;
+  --fg-subtle: #111111;
   --accent: #1a7f37;
   --danger: #b42318;
   --warn-bg: #fff3cd;
   --warn-border: #e0b100;
+  --warn-fg: #5c4400;
+}
+
+/* The bug this fixes: buttons used to inherit a light-mode-only
+   background (--bg-subtle) with text color inherited from the page,
+   which flips to near-white in dark mode -- near-invisible button text
+   on a still-light button background. Every token below is redefined
+   for dark mode so button/background/text pairs always stay readable. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --fg: #f0f0f0;
+    --border: #3a3a3a;
+    --bg-subtle: #2a2a2a;
+    --fg-subtle: #f0f0f0;
+    --warn-bg: #4a3b00;
+    --warn-border: #8a6d00;
+    --warn-fg: #ffe08a;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -13,8 +35,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  background: Canvas;
-  color: CanvasText;
+  background: var(--bg);
+  color: var(--fg);
 }
 
 .screen { min-height: 100vh; }
@@ -50,7 +72,7 @@ body {
   cursor: pointer;
   font-size: 0.95rem;
   border-bottom: 2px solid transparent;
-  color: inherit;
+  color: var(--fg);
 }
 .tab-btn.active { border-bottom-color: var(--accent); font-weight: 600; }
 
@@ -74,16 +96,18 @@ button {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg-subtle);
+  color: var(--fg-subtle);
   cursor: pointer;
 }
 button:hover { filter: brightness(0.95); }
 
 .controls { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 
-#connect-qr { max-width: 260px; margin: 1rem 0; display: block; }
+#connect-qr { max-width: 260px; margin: 1rem 0; display: block; background: #fff; padding: 0.5rem; border-radius: 6px; }
 
 .banner {
   background: var(--warn-bg);
+  color: var(--warn-fg);
   border: 1px solid var(--warn-border);
   padding: 0.6rem 1rem;
   border-radius: 6px;
