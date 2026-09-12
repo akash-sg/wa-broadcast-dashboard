@@ -3,20 +3,17 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+// Isolated data dir — test files run as separate processes and would
+// otherwise race on the real data/ dir (see storage.js).
+process.env.OPENWA_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'openwa-contacts-test-'));
+
 const storage = require('../lib/storage');
 const contacts = require('../lib/contacts');
 
-const contactsFile = path.join(storage.DATA_DIR, 'contacts.json');
-let snapshot = null;
-
-test.before(() => {
-  snapshot = fs.existsSync(contactsFile) ? fs.readFileSync(contactsFile, 'utf8') : null;
-});
-test.after(() => {
-  if (snapshot === null) fs.rmSync(contactsFile, { force: true });
-  else fs.writeFileSync(contactsFile, snapshot);
-});
-test.beforeEach(() => fs.rmSync(contactsFile, { force: true }));
+test.after(() => fs.rmSync(storage.DATA_DIR, { recursive: true, force: true }));
+test.beforeEach(() => fs.rmSync(path.join(storage.DATA_DIR, 'contacts.json'), { force: true }));
 
 test('parseCSV splits simple rows', () => {
   const rows = contacts.parseCSV('name,number\nJohn,15551234567\nJane,15559876543\n');
@@ -93,6 +90,38 @@ test('getCounts tallies by group', async () => {
   stored[1].group = 'NoResponse';
   await storage.writeJSON('contacts', stored);
   assert.deepStrictEqual(contacts.getCounts(), { Pending: 0, Replied: 1, NoResponse: 1 });
+});
+
+test('markSent sets sentAt and lastMessageVariant', async () => {
+  await contacts.importCSV('name,number\nA,15551111111\n');
+  await contacts.markSent('15551111111', { variantId: 'v2', sentAt: '2026-01-01T00:00:00Z' });
+  const [c] = contacts.getContacts();
+  assert.strictEqual(c.sentAt, '2026-01-01T00:00:00Z');
+  assert.strictEqual(c.lastMessageVariant, 'v2');
+});
+
+test('markReplied flips group to Replied unconditionally, even from NoResponse', async () => {
+  await contacts.importCSV('name,number\nA,15551111111\n');
+  const stored = contacts.getContacts();
+  stored[0].group = 'NoResponse';
+  await storage.writeJSON('contacts', stored);
+
+  await contacts.markReplied('15551111111', { repliedAt: '2026-01-01T00:00:00Z' });
+  const [c] = contacts.getContacts();
+  assert.strictEqual(c.group, 'Replied');
+  assert.strictEqual(c.repliedAt, '2026-01-01T00:00:00Z');
+});
+
+test('markNoResponse only moves contacts still Pending', async () => {
+  await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  const stored = contacts.getContacts();
+  stored[0].group = 'Replied'; // already resolved, must not be touched
+  await storage.writeJSON('contacts', stored);
+
+  await contacts.markNoResponse(['15551111111', '15552222222']);
+  const after = contacts.getContacts();
+  assert.strictEqual(after[0].group, 'Replied');
+  assert.strictEqual(after[1].group, 'NoResponse');
 });
 
 test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
