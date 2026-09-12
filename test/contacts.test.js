@@ -153,3 +153,12 @@ test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
   assert.ok(lines[1].startsWith('"\'=cmd'));
   assert.ok(lines[2].startsWith('15559876543'));
 });
+
+test('exportCSV includes group and timestamps (it is a report, not just a list)', () => {
+  const csv = contacts.exportCSV([
+    { number: '15551111111', group: 'Replied', sentAt: '2026-01-01T00:00:00Z', repliedAt: '2026-01-01T01:00:00Z' },
+  ]);
+  const lines = csv.split('\n');
+  assert.strictEqual(lines[0], 'number,group,sentAt,repliedAt');
+  assert.strictEqual(lines[1], '15551111111,Replied,2026-01-01T00:00:00Z,2026-01-01T01:00:00Z');
+});

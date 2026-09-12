@@ -32,8 +32,13 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').hidden = true;
   document.getElementById('app-screen').hidden = false;
-  showTab('connect');
+  showTab('dashboard');
   startPolling();
+}
+
+// Sets a small colored dot: 'green' | 'yellow' | 'red' | 'gray'.
+function setStatusDot(el, color) {
+  el.className = `status-dot status-dot--${color}`;
 }
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -66,6 +71,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 // ---- Tabs ------------------------------------------------------------------
 
 const TAB_LOADERS = {
+  dashboard: loadDashboard,
   connect: loadConnect,
   contacts: loadContacts,
   variants: loadVariants,
@@ -74,7 +80,7 @@ const TAB_LOADERS = {
   logs: loadLogs,
 };
 
-let activeTab = 'connect';
+let activeTab = 'dashboard';
 
 function showTab(name) {
   activeTab = name;
@@ -97,12 +103,41 @@ function startPolling() {
   }, 4000);
 }
 
+// ---- Dashboard (live overview) ---------------------------------------------
+
+async function loadDashboard() {
+  const [connect, campaignState, contactsData] = await Promise.all([
+    loadConnect(),
+    loadCampaign(),
+    api('/api/contacts').then((r) => r.json()),
+  ]);
+
+  document.getElementById('dash-connect-text').textContent = connect.status;
+  setStatusDot(document.getElementById('dash-connect-dot'), CONNECT_DOT_COLOR[connect.status] || 'gray');
+
+  document.getElementById('dash-campaign-text').textContent = campaignState.status;
+  setStatusDot(document.getElementById('dash-campaign-dot'), CAMPAIGN_DOT_COLOR[campaignState.status] || 'gray');
+
+  renderCounts(document.getElementById('dash-counts'), contactsData.counts);
+
+  const banner = document.getElementById('dash-banner');
+  if (campaignState.status === 'paused' && campaignState.pauseReason && PAUSE_REASON_TEXT[campaignState.pauseReason]) {
+    banner.textContent = PAUSE_REASON_TEXT[campaignState.pauseReason];
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
+  }
+}
+
 // ---- Connect ----------------------------------------------------------------
+
+const CONNECT_DOT_COLOR = { connected: 'green', connecting: 'yellow', disconnected: 'red' };
 
 async function loadConnect() {
   const res = await api('/api/connect/status');
   const { status, qr } = await res.json();
   document.getElementById('connect-status').textContent = status;
+  setStatusDot(document.getElementById('connect-dot'), CONNECT_DOT_COLOR[status] || 'gray');
   const img = document.getElementById('connect-qr');
   if (qr) {
     img.src = qr;
@@ -110,6 +145,7 @@ async function loadConnect() {
   } else {
     img.hidden = true;
   }
+  return { status, qr };
 }
 
 document.getElementById('reconnect-btn').addEventListener('click', async () => {
@@ -165,17 +201,19 @@ document.getElementById('import-form').addEventListener('submit', async (e) => {
   loadContacts();
 });
 
-document.getElementById('export-link').addEventListener('click', async (e) => {
+async function downloadReport(e) {
   e.preventDefault();
   const res = await api('/api/contacts/export');
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'contacts-export.csv';
+  a.download = 'contacts-report.csv';
   a.click();
   URL.revokeObjectURL(url);
-});
+}
+document.getElementById('export-link').addEventListener('click', downloadReport);
+document.getElementById('dash-export-link').addEventListener('click', downloadReport);
 
 // ---- Message Variants ----------------------------------------------------------------
 
@@ -243,11 +281,14 @@ const PAUSE_REASON_TEXT = {
   manual: 'Paused.',
 };
 
+const CAMPAIGN_DOT_COLOR = { running: 'green', paused: 'yellow', quiet_hours: 'yellow', idle: 'gray', stopped: 'gray' };
+
 async function loadCampaign() {
   const res = await api('/api/campaign');
   const state = await res.json();
   renderCounts(document.getElementById('campaign-counts'), state.counts);
   document.getElementById('campaign-status').textContent = state.status;
+  setStatusDot(document.getElementById('campaign-dot'), CAMPAIGN_DOT_COLOR[state.status] || 'gray');
 
   const banner = document.getElementById('campaign-banner');
   if (state.status === 'paused' && state.pauseReason && PAUSE_REASON_TEXT[state.pauseReason]) {
@@ -264,6 +305,7 @@ async function loadCampaign() {
       `Current batch: ${state.currentBatch.repliesReceived.length}/${state.config.replyThreshold} replies, ` +
       `started ${new Date(state.currentBatch.startedAt).toLocaleTimeString()}`;
   }
+  return state;
 }
 
 document.getElementById('campaign-start').addEventListener('click', () => api('/api/campaign/start', { method: 'POST' }).then(loadCampaign));

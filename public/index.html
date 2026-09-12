@@ -19,6 +19,7 @@
 
 <div id="app-screen" class="screen" hidden>
   <nav id="tabs">
+    <button class="tab-btn" data-tab="dashboard">Dashboard</button>
     <button class="tab-btn" data-tab="connect">Connect</button>
     <button class="tab-btn" data-tab="contacts">Contacts</button>
     <button class="tab-btn" data-tab="variants">Message Variants</button>
@@ -28,9 +29,30 @@
   </nav>
 
   <main>
+    <section id="tab-dashboard" class="tab-panel">
+      <h2>Dashboard</h2>
+      <p class="hint">Live view — refreshes automatically every few seconds.</p>
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <h3>WhatsApp connection</h3>
+          <div class="status-row"><span class="status-dot" id="dash-connect-dot"></span><strong id="dash-connect-text">-</strong></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>Campaign</h3>
+          <div class="status-row"><span class="status-dot" id="dash-campaign-dot"></span><strong id="dash-campaign-text">-</strong></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>Contacts</h3>
+          <div class="counts" id="dash-counts"></div>
+        </div>
+      </div>
+      <p id="dash-banner" class="banner" hidden></p>
+      <p style="margin-top:1rem"><a id="dash-export-link" href="#">Download report (CSV)</a></p>
+    </section>
+
     <section id="tab-connect" class="tab-panel">
       <h2>Connect</h2>
-      <p>Status: <strong id="connect-status">-</strong></p>
+      <div class="status-row"><span class="status-dot" id="connect-dot"></span>Status: <strong id="connect-status">-</strong></div>
       <img id="connect-qr" alt="Scan this QR code with WhatsApp" hidden>
       <button id="reconnect-btn">Reconnect with a different number</button>
     </section>
@@ -45,7 +67,7 @@
       </form>
       <p class="hint">CSV: one number per row (a "number" header column is optional; other columns are ignored).</p>
       <p id="import-result"></p>
-      <a id="export-link" href="#">Export contacts CSV</a>
+      <a id="export-link" href="#">Download report (CSV)</a>
       <table id="contacts-table">
         <thead><tr><th>Number</th><th>Group</th></tr></thead>
         <tbody></tbody>
@@ -82,7 +104,7 @@
       <h2>Campaign</h2>
       <p id="campaign-banner" class="banner" hidden></p>
       <div class="counts" id="campaign-counts"></div>
-      <p>Status: <strong id="campaign-status">-</strong></p>
+      <div class="status-row"><span class="status-dot" id="campaign-dot"></span>Status: <strong id="campaign-status">-</strong></div>
       <div id="campaign-batch"></div>
       <div class="controls">
         <button id="campaign-start">Start</button>
