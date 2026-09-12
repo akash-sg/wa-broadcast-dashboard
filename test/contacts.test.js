@@ -38,6 +38,16 @@ test('normalizeNumber prepends a default country code for short numbers', () => 
   assert.strictEqual(contacts.normalizeNumber('1234567', '1'), '11234567');
 });
 
+test('normalizeNumber prepends a default country code even to an already-long bare local number', () => {
+  // Regression: a 10-digit Indian mobile with no +91 used to pass length
+  // validation on its own and never get the country code prepended.
+  assert.strictEqual(contacts.normalizeNumber('9148291767', '91'), '919148291767');
+});
+
+test('normalizeNumber does not double-prepend when the country code is already present', () => {
+  assert.strictEqual(contacts.normalizeNumber('+91 94800 07470', '91'), '919480007470');
+});
+
 test('importCSV accepts a plain number-only CSV, no header required', async () => {
   const result = await contacts.importCSV('+15551234567\n');
   assert.strictEqual(result.accepted.length, 1);
