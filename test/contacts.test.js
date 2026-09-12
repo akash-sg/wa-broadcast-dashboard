@@ -16,19 +16,15 @@ test.after(() => fs.rmSync(storage.DATA_DIR, { recursive: true, force: true }));
 test.beforeEach(() => fs.rmSync(path.join(storage.DATA_DIR, 'contacts.json'), { force: true }));
 
 test('parseCSV splits simple rows', () => {
-  const rows = contacts.parseCSV('name,number\nJohn,15551234567\nJane,15559876543\n');
-  assert.deepStrictEqual(rows, [
-    ['name', 'number'],
-    ['John', '15551234567'],
-    ['Jane', '15559876543'],
-  ]);
+  const rows = contacts.parseCSV('15551234567\n15559876543\n');
+  assert.deepStrictEqual(rows, [['15551234567'], ['15559876543']]);
 });
 
 test('parseCSV handles quoted fields with embedded commas', () => {
-  const rows = contacts.parseCSV('name,number\n"Doe, Jane",15551234567\n');
+  const rows = contacts.parseCSV('number,note\n15551234567,"Doe, Jane"\n');
   assert.deepStrictEqual(rows, [
-    ['name', 'number'],
-    ['Doe, Jane', '15551234567'],
+    ['number', 'note'],
+    ['15551234567', 'Doe, Jane'],
   ]);
 });
 
@@ -42,58 +38,59 @@ test('normalizeNumber prepends a default country code for short numbers', () => 
   assert.strictEqual(contacts.normalizeNumber('1234567', '1'), '11234567');
 });
 
-test('importCSV accepts valid rows as new Pending contacts', async () => {
-  const result = await contacts.importCSV('name,number\nJohn,+15551234567\n');
+test('importCSV accepts a plain number-only CSV, no header required', async () => {
+  const result = await contacts.importCSV('+15551234567\n');
   assert.strictEqual(result.accepted.length, 1);
   assert.strictEqual(result.rejected.length, 0);
   const stored = contacts.getContacts();
   assert.strictEqual(stored.length, 1);
   assert.strictEqual(stored[0].group, 'Pending');
   assert.strictEqual(stored[0].number, '15551234567');
+  assert.strictEqual(stored[0].name, undefined); // no name field at all
 });
 
-test('importCSV rejects missing name, invalid number, and in-file duplicates', async () => {
-  const csv = [
-    'name,number',
-    ',15551234567',
-    'Bad Number,123',
-    'Dup,15559876543',
-    'Dup Again,15559876543',
-  ].join('\n');
+test('importCSV finds the number column via header, ignoring other columns', async () => {
+  const csv = 'name,number\nJohn,15551234567\nJane,15559876543\n';
+  const result = await contacts.importCSV(csv);
+  assert.strictEqual(result.accepted.length, 2);
+  const stored = contacts.getContacts();
+  assert.deepStrictEqual(stored.map((c) => c.number).sort(), ['15551234567', '15559876543']);
+});
+
+test('importCSV rejects invalid numbers and in-file duplicates', async () => {
+  const csv = ['number', '123', '15559876543', '15559876543'].join('\n');
   const result = await contacts.importCSV(csv);
   assert.strictEqual(result.accepted.length, 1);
-  assert.strictEqual(result.rejected.length, 3);
-  assert.strictEqual(result.rejected[0].reason, 'missing name');
-  assert.strictEqual(result.rejected[1].reason, 'invalid or missing number');
-  assert.strictEqual(result.rejected[2].reason, 'duplicate number in file');
+  assert.strictEqual(result.rejected.length, 2);
+  assert.strictEqual(result.rejected[0].reason, 'invalid or missing number');
+  assert.strictEqual(result.rejected[1].reason, 'duplicate number in file');
 });
 
-test('importCSV re-upload updates name but never touches group or timestamps', async () => {
-  await contacts.importCSV('name,number\nJohn,15551234567\n');
+test('importCSV re-upload never touches group or timestamps for existing contacts', async () => {
+  await contacts.importCSV('15551234567\n');
   const stored = contacts.getContacts();
   stored[0].group = 'Replied';
   stored[0].repliedAt = '2026-01-01T00:00:00Z';
   await storage.writeJSON('contacts', stored);
 
-  const result = await contacts.importCSV('name,number\nJohnny,15551234567\n');
-  assert.strictEqual(result.accepted[0].name, 'Johnny');
+  await contacts.importCSV('15551234567\n'); // re-upload the same number
   const after = contacts.getContacts();
-  assert.strictEqual(after[0].name, 'Johnny');
+  assert.strictEqual(after.length, 1); // not duplicated
   assert.strictEqual(after[0].group, 'Replied'); // untouched
   assert.strictEqual(after[0].repliedAt, '2026-01-01T00:00:00Z'); // untouched
 });
 
-test('getCounts tallies by group', async () => {
-  await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+test('getCounts tallies by group, including Invalid', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n');
   const stored = contacts.getContacts();
   stored[0].group = 'Replied';
-  stored[1].group = 'NoResponse';
+  stored[1].group = 'Invalid';
   await storage.writeJSON('contacts', stored);
-  assert.deepStrictEqual(contacts.getCounts(), { Pending: 0, Replied: 1, NoResponse: 1 });
+  assert.deepStrictEqual(contacts.getCounts(), { Pending: 0, Replied: 1, NoResponse: 0, Invalid: 1 });
 });
 
 test('markSent sets sentAt and lastMessageVariant', async () => {
-  await contacts.importCSV('name,number\nA,15551111111\n');
+  await contacts.importCSV('15551111111\n');
   await contacts.markSent('15551111111', { variantId: 'v2', sentAt: '2026-01-01T00:00:00Z' });
   const [c] = contacts.getContacts();
   assert.strictEqual(c.sentAt, '2026-01-01T00:00:00Z');
@@ -101,7 +98,7 @@ test('markSent sets sentAt and lastMessageVariant', async () => {
 });
 
 test('markReplied flips group to Replied unconditionally, even from NoResponse', async () => {
-  await contacts.importCSV('name,number\nA,15551111111\n');
+  await contacts.importCSV('15551111111\n');
   const stored = contacts.getContacts();
   stored[0].group = 'NoResponse';
   await storage.writeJSON('contacts', stored);
@@ -113,7 +110,7 @@ test('markReplied flips group to Replied unconditionally, even from NoResponse',
 });
 
 test('concurrent markSent and markReplied on different contacts both land (no lost update)', async () => {
-  await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await contacts.importCSV('15551111111\n15552222222\n');
   await Promise.all([
     contacts.markSent('15551111111', { variantId: 'v1' }),
     contacts.markReplied('15552222222'),
@@ -124,7 +121,7 @@ test('concurrent markSent and markReplied on different contacts both land (no lo
 });
 
 test('markNoResponse only moves contacts still Pending', async () => {
-  await contacts.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await contacts.importCSV('15551111111\n15552222222\n');
   const stored = contacts.getContacts();
   stored[0].group = 'Replied'; // already resolved, must not be touched
   await storage.writeJSON('contacts', stored);
@@ -135,12 +132,24 @@ test('markNoResponse only moves contacts still Pending', async () => {
   assert.strictEqual(after[1].group, 'NoResponse');
 });
 
+test('markInvalid only moves contacts still Pending', async () => {
+  await contacts.importCSV('15551111111\n15552222222\n');
+  const stored = contacts.getContacts();
+  stored[0].group = 'Replied'; // already resolved, must not be touched
+  await storage.writeJSON('contacts', stored);
+
+  await contacts.markInvalid(['15551111111', '15552222222']);
+  const after = contacts.getContacts();
+  assert.strictEqual(after[0].group, 'Replied');
+  assert.strictEqual(after[1].group, 'Invalid');
+});
+
 test('exportCSV prefixes formula-like cells to prevent CSV injection', () => {
   const csv = contacts.exportCSV([
-    { name: '=cmd|/c calc', number: '15551234567', group: 'Pending' },
-    { name: 'Normal Name', number: '15559876543', group: 'Replied' },
+    { number: '=cmd|/c calc', group: 'Pending' },
+    { number: '15559876543', group: 'Replied' },
   ]);
   const lines = csv.split('\n');
   assert.ok(lines[1].startsWith('"\'=cmd'));
-  assert.ok(lines[2].startsWith('Normal Name'));
+  assert.ok(lines[2].startsWith('15559876543'));
 });

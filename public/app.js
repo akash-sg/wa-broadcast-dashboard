@@ -137,9 +137,9 @@ async function loadContacts() {
   tbody.textContent = '';
   for (const c of contacts) {
     const tr = document.createElement('tr');
-    for (const value of [c.name, c.number, c.group]) {
+    for (const value of [c.number, c.group]) {
       const td = document.createElement('td');
-      td.textContent = value; // never innerHTML — a malicious CSV name must not execute (eng review finding)
+      td.textContent = value; // never innerHTML — untrusted contact data must never be parsed as markup
       tr.appendChild(td);
     }
     tbody.appendChild(tr);

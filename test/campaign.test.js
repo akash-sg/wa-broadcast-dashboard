@@ -132,9 +132,10 @@ test('pickVariant: empty list returns null', () => {
   assert.strictEqual(pickVariant([], 0), null);
 });
 
-test('personalize: replaces {{name}} including whitespace/case variants', () => {
-  assert.strictEqual(personalize('Hi {{name}}!', 'Sam'), 'Hi Sam!');
-  assert.strictEqual(personalize('Hi {{ Name }}!', 'Sam'), 'Hi Sam!');
+test('personalize: strips stray {{name}} placeholders (no per-contact name data)', () => {
+  assert.strictEqual(personalize('Hi {{name}}, check this out'), 'Hi , check this out');
+  assert.strictEqual(personalize('Hi {{ Name }} check this out'), 'Hi check this out');
+  assert.strictEqual(personalize('No placeholder here'), 'No placeholder here');
 });
 
 test('randomDelayMs: stays within the configured minute range', () => {
@@ -152,7 +153,7 @@ function filePath(key) { return path.join(storage.DATA_DIR, `${key}.json`); }
 test.after(() => fs.rmSync(storage.DATA_DIR, { recursive: true, force: true }));
 test.beforeEach(async () => {
   for (const k of KEYS) fs.rmSync(filePath(k), { force: true });
-  await variantsLib.setVariants([{ id: 'v1', text: 'Hi {{name}}, check this out: link1' }]);
+  await variantsLib.setVariants([{ id: 'v1', text: 'Check this out: link1' }]);
 });
 
 function fakeBaileys() {
@@ -160,14 +161,16 @@ function fakeBaileys() {
   emitter.status = 'connected';
   emitter.sent = [];
   emitter.sendMessage = async (number, text) => { emitter.sent.push({ number, text }); };
+  // Default: every number checked is registered on WhatsApp.
+  emitter.checkOnWhatsApp = async (numbers) => numbers.map((number) => ({ number, exists: true }));
   return emitter;
 }
 
 test('starting a campaign sends to Pending contacts and persists currentBatch', async () => {
-  await contactsLib.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await contactsLib.importCSV('15551111111\n15552222222\n');
   const baileys = fakeBaileys();
   const engine = new CampaignEngine(baileys);
-  await engine.updateConfig({ batchSize: 5, replyThreshold: 3, minDelayMin: 0, maxDelayMin: 0 });
+  await engine.updateConfig({ batchSize: 5, replyThreshold: 3, minDelayMin: 0, maxDelayMin: 0, quietStartHour: 0, quietEndHour: 0 });
   await engine.startCampaign();
   await engine.tick();
 
@@ -178,8 +181,24 @@ test('starting a campaign sends to Pending contacts and persists currentBatch', 
   assert.ok(stored.every((c) => c.sentAt));
 });
 
+test('numbers not registered on WhatsApp are sorted into Invalid before sending, not sent to', async () => {
+  await contactsLib.importCSV('15551111111\n15552222222\n');
+  const baileys = fakeBaileys();
+  baileys.checkOnWhatsApp = async (numbers) =>
+    numbers.map((number) => ({ number, exists: number !== '15552222222' }));
+  const engine = new CampaignEngine(baileys);
+  await engine.updateConfig({ batchSize: 5, minDelayMin: 0, maxDelayMin: 0, quietStartHour: 0, quietEndHour: 0 });
+  await engine.startCampaign();
+  await engine.tick();
+
+  assert.deepStrictEqual(baileys.sent.map((s) => s.number), ['15551111111']);
+  const stored = contactsLib.getContacts();
+  assert.strictEqual(stored.find((c) => c.number === '15552222222').group, 'Invalid');
+  assert.strictEqual(stored.find((c) => c.number === '15552222222').sentAt, null);
+});
+
 test('resume does not re-send contacts that already have sentAt', async () => {
-  await contactsLib.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await contactsLib.importCSV('15551111111\n15552222222\n');
   const stored = contactsLib.getContacts();
   stored[0].sentAt = new Date().toISOString(); // already sent, simulating a prior crash
   await storage.writeJSON('contacts', stored);
@@ -201,7 +220,7 @@ test('resume does not re-send contacts that already have sentAt', async () => {
 });
 
 test('batch ends on reply threshold, moving the rest to NoResponse', async () => {
-  await contactsLib.importCSV('name,number\nA,15551111111\nB,15552222222\nC,15553333333\n');
+  await contactsLib.importCSV('15551111111\n15552222222\n15553333333\n');
   await storage.writeJSON('campaign', {
     status: 'running',
     pauseReason: null,
@@ -231,12 +250,12 @@ test('batch ends on reply threshold, moving the rest to NoResponse', async () =>
 });
 
 test('5 consecutive send failures auto-pauses the campaign', async () => {
-  const rows = ['A', 'B', 'C', 'D', 'E', 'F'].map((n, i) => `${n},1555000000${i}`).join('\n');
-  await contactsLib.importCSV(`name,number\n${rows}\n`);
+  const rows = [0, 1, 2, 3, 4, 5].map((i) => `1555000000${i}`).join('\n');
+  await contactsLib.importCSV(`${rows}\n`);
   const baileys = fakeBaileys();
   baileys.sendMessage = async () => { throw new Error('boom'); };
   const engine = new CampaignEngine(baileys);
-  await engine.updateConfig({ batchSize: 6, minDelayMin: 0, maxDelayMin: 0 });
+  await engine.updateConfig({ batchSize: 6, minDelayMin: 0, maxDelayMin: 0, quietStartHour: 0, quietEndHour: 0 });
   await engine.startCampaign();
   await engine.tick();
 
@@ -246,7 +265,7 @@ test('5 consecutive send failures auto-pauses the campaign', async () => {
 });
 
 test('concurrent _onReply and pauseCampaign both land (no lost update on campaign state)', async () => {
-  await contactsLib.importCSV('name,number\nA,15551111111\n');
+  await contactsLib.importCSV('15551111111\n');
   await storage.writeJSON('campaign', {
     status: 'running',
     pauseReason: null,
@@ -269,7 +288,7 @@ test('concurrent _onReply and pauseCampaign both land (no lost update on campaig
 });
 
 test('stopCampaign finalizes the current batch before marking stopped', async () => {
-  await contactsLib.importCSV('name,number\nA,15551111111\nB,15552222222\n');
+  await contactsLib.importCSV('15551111111\n15552222222\n');
   await storage.writeJSON('campaign', {
     status: 'running',
     pauseReason: null,

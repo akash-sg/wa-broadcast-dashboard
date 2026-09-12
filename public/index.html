@@ -43,10 +43,11 @@
         <input type="text" id="import-country-code" placeholder="Default country code (optional)">
         <button type="submit">Upload CSV</button>
       </form>
+      <p class="hint">CSV: one number per row (a "number" header column is optional; other columns are ignored).</p>
       <p id="import-result"></p>
       <a id="export-link" href="#">Export contacts CSV</a>
       <table id="contacts-table">
-        <thead><tr><th>Name</th><th>Number</th><th>Group</th></tr></thead>
+        <thead><tr><th>Number</th><th>Group</th></tr></thead>
         <tbody></tbody>
       </table>
     </section>
@@ -54,7 +55,7 @@
     <section id="tab-variants" class="tab-panel">
       <h2>Message Variants</h2>
       <form id="variant-form">
-        <textarea id="variant-text" placeholder="Message text — use {{name}} to personalize" required></textarea>
+        <textarea id="variant-text" placeholder="Message text" required></textarea>
         <button type="submit">Add variant</button>
       </form>
       <ul id="variant-list"></ul>
