@@ -5,3 +5,10 @@ auth/
 contacts.csv
 *.log
 qr-code.png
+
+# Planning/design docs used while building this with Claude — not meant
+# for the public repo, kept locally only.
+CLAUDE.md
+PLAN.md
+TODOS.md
+docs/designs/
