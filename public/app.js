@@ -329,7 +329,7 @@ async function loadSettings() {
 
 document.getElementById('settings-preset-large').addEventListener('click', () => {
   const form = document.getElementById('settings-form');
-  const preset = { batchSize: 40, replyThreshold: 0, timeoutMinutes: 1, minDelayMin: 2, maxDelayMin: 5 };
+  const preset = { batchSize: 40, replyThreshold: 0, timeoutMinutes: 1, minDelayMin: 0, maxDelayMin: 3 };
   for (const [key, value] of Object.entries(preset)) {
     if (form.elements[key]) form.elements[key].value = value;
   }
