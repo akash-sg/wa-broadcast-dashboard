@@ -1,4 +1,4 @@
-# How to run this and test it — in plain English
+# How to run this and test it
 
 You don't need to understand the code. Just follow these steps in order.
 
