@@ -4,7 +4,14 @@ You don't need to understand the code. Just follow these steps in order.
 
 ## 1. One-time setup (do this once)
 
-Open a terminal in this folder (`OpenWA`) and run:
+Get the code onto your computer. If you haven't already, clone it from
+GitHub (needs [git](https://git-scm.com/downloads) installed):
+
+```bash
+git clone https://github.com/akash-sg/wa-broadcast-dashboard.git
+```
+
+Open a terminal in that folder and run:
 
 ```bash
 npm install
@@ -13,7 +20,8 @@ npm install
 This downloads the pieces the app needs. Takes a minute or two. You'll see a
 lot of text scroll by — that's normal.
 
-Now set your dashboard password. Copy the example settings file:
+**Every person running this needs their own password — it's not shared
+through GitHub.** Copy the example settings file:
 
 ```bash
 cp .env.example .env
@@ -27,7 +35,10 @@ DASHBOARD_PASSWORD=change-me
 ```
 
 Save the file. Don't share this file with anyone or upload it anywhere —
-it's your private password.
+it's your private password. (`.env` is deliberately left out of GitHub —
+that's what keeps it private — so nothing here gets copied to anyone else
+automatically, and if someone else clones the repo, they *must* set their
+own password before the app will run at all.)
 
 ## 2. Start the app
 
@@ -40,6 +51,20 @@ npm start
 You'll see a line like `Dashboard running at http://127.0.0.1:3000`. Leave
 this terminal window open — closing it stops the app. If you close the
 window and re-open it, just run `npm start` again to get going.
+
+**If you cloned this from GitHub** (rather than a zip someone sent you),
+you can pick up the latest updates first by running this instead:
+
+```bash
+npm run update
+```
+
+That pulls whatever's newest from GitHub, re-installs anything that
+changed, and starts the app — one command instead of three. There's no
+*automatic* background updating (the app doesn't check for updates on its
+own while running) — you or your friend just run this instead of
+`npm start` whenever you want to grab the latest version before that
+session.
 
 ## 3. Open it in your browser
 

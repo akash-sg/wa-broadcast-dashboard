@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "update": "git pull && npm install && npm start",
     "test": "node --test"
   },
   "dependencies": {
