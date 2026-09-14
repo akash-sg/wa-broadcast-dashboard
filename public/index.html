@@ -101,9 +101,19 @@
 
     <section id="tab-settings" class="tab-panel">
       <h2>Pacing/Settings</h2>
+      <p class="hint">
+        For a big list, two things matter most: <strong>Batch size</strong>
+        (bigger = fewer waiting rounds) and <strong>Reply threshold</strong>
+        (set to 0 so it doesn't wait around for replies before moving to the
+        next batch — replies are still tracked whenever they come in). The
+        delay between sends and quiet hours exist to make sending look
+        human and avoid getting the number flagged/banned — lowering or
+        disabling them sends faster but is riskier.
+      </p>
+      <button type="button" id="settings-preset-large">Fill in faster settings for a large list</button>
       <form id="settings-form">
         <label>Batch size <input type="number" name="batchSize" min="1"></label>
-        <label>Reply threshold <input type="number" name="replyThreshold" min="1"></label>
+        <label>Reply threshold <input type="number" name="replyThreshold" min="0"></label>
         <label>Batch timeout (minutes) <input type="number" name="timeoutMinutes" min="1"></label>
         <label>Min delay between sends (minutes) <input type="number" name="minDelayMin" min="0"></label>
         <label>Max delay between sends (minutes) <input type="number" name="maxDelayMin" min="0"></label>

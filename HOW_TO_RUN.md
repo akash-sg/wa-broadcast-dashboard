@@ -121,16 +121,26 @@ should differ, not the link.
 **Counting as a reply.** If your message asks people to react with an
 emoji (👍 or ❤️, like in the Ganesh festival example), that counts as a
 reply just like a typed message does — the app watches for both.
-Each run prints a different short link (e.g.
-`https://tinyurl.com/22tacl9o`) that goes to the same real channel — paste
-one into each variant. Takes a couple seconds, no setup needed.
 
-## 7. Check your pacing settings (optional)
+## 7. Check your pacing settings (optional, but worth it for a big list)
 
-Click **Pacing/Settings** if you want to change how many messages go out
-per batch, how long to wait for replies, or quiet hours (times it won't
-send, like late at night). The defaults are sensible — you don't have to
-touch this.
+Click **Pacing/Settings** to change how many messages go out per batch,
+how long to wait for replies, or quiet hours (times it won't send, like
+late at night). The defaults are sensible for a small list, but they're
+also *slow* — with 800+ contacts the default settings can take several
+days, because the app waits up to 30 minutes after each small batch of 5
+hoping for replies, and pauses for 11 hours a night.
+
+Click **Fill in faster settings for a large list** to load quicker values
+(bigger batches, no waiting around for replies before moving on), then
+**Save settings**. You can still edit any field by hand afterwards —
+nothing is applied until you click Save.
+
+The one tradeoff to know: the delay between individual sends and the
+quiet hours exist to make sending look human and avoid WhatsApp flagging
+the number. Shrinking or disabling those sends faster but is riskier —
+that's a judgment call for you to make, not something the app can decide
+for you.
 
 ## 8. Start the campaign
 
